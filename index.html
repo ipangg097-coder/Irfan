@@ -1,0 +1,176 @@
+<!DOCTYPE html>  <html lang="id">  
+<head>  
+<meta charset="UTF-8">  
+<meta name="viewport" content="width=device-width, initial-scale=1.0">  
+<title>Simpan Kenangan</title>  
+<script src="https://cdn.tailwindcss.com"></script>  
+<script>tailwind.config={darkMode:'class'}</script>  
+<style>  
+/* ANIMASI & STYLING */  
+@keyframes fadeInUp {0% {opacity:0; transform: translateY(20px);} 100% {opacity:1; transform: translateY(0);}}  
+@keyframes gradientBG {0%{background-position:0% 50%;} 50%{background-position:100% 50%;} 100%{background-position:0% 50%;}}  
+@keyframes pulseNeon {0%,100%{text-shadow:0 0 5px #fff,0 0 10px #ff0080,0 0 20px #ff0080;}50%{text-shadow:0 0 10px #fff,0 0 20px #ff0080,0 0 30px #ff0080;}}  
+.animate-fadeInUp { animation: fadeInUp 0.4s ease forwards; }  
+.animated-bg { background: linear-gradient(-45deg,#6b21a8,#8b5cf6,#ec4899,#f97316); background-size:400% 400%; animation: gradientBG 15s ease infinite;}  
+.hover-glow:hover { box-shadow:0 0 25px rgba(255,255,255,0.7); transform: scale(1.05); transition: all 0.3s ease; }  
+.neon-button:hover { box-shadow:0 0 15px #0ff,0 0 30px #0ff; transform: scale(1.1); transition: all 0.3s ease;}  
+.neon-text { animation: pulseNeon 2s infinite; }  
+.blur { filter: blur(8px); }  
+.locked-overlay {position:absolute; inset:0; background:rgba(0,0,0,0.6); color:white; font-size:1.5rem; display:flex; justify-content:center; align-items:center; border-radius:0.75rem; pointer-events:none; font-weight:bold;}  
+.modal-glow {box-shadow:0 0 20px #0ff,0 0 40px #0ff;}  
+</style>  
+</head>  
+<body class="animated-bg min-h-screen flex items-center justify-center transition-all duration-700 font-sans">  <!-- AUTH -->  <div id="authPage" class="bg-white dark:bg-gray-900 p-8 rounded-3xl shadow-2xl w-full max-w-md transition-transform transform hover:scale-105">  
+  <h2 class="text-3xl font-bold text-center mb-6 dark:text-white neon-text">🔐 Login / Register</h2>  
+  <input id="authUser" type="text" placeholder="Username" class="w-full mb-3 p-3 border rounded-xl dark:bg-gray-800 dark:text-white">  
+  <input id="authPass" type="password" placeholder="Password" class="w-full mb-3 p-3 border rounded-xl dark:bg-gray-800 dark:text-white">  
+  <button onclick="login()" class="w-full bg-indigo-600 text-white py-3 rounded-xl mb-2 neon-button">Login</button>  
+  <button onclick="register()" class="w-full bg-green-600 text-white py-3 rounded-xl mb-2 neon-button">Register</button>  
+  <p id="authMsg" class="text-center mt-3 text-sm text-red-500"></p>  
+</div>  <!-- DASHBOARD -->  <div id="dashboard" class="hidden w-full max-w-7xl bg-white dark:bg-gray-900 rounded-3xl shadow-2xl p-6 transition-all duration-700">    <!-- HEADER -->    <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-3">  
+    <h1 class="text-3xl font-bold dark:text-white neon-text text-center md:text-left">📸 Simpan Kenangan Anda</h1>  
+    <div class="flex gap-2">  
+      <button onclick="toggleDark()" class="bg-gray-700 text-white px-3 py-2 rounded neon-button">🌙</button>  
+      <button onclick="logout()" class="bg-red-500 text-white px-3 py-2 rounded neon-button">Logout</button>  
+      <button onclick="toggleBlur()" class="bg-pink-500 text-white px-3 py-2 rounded neon-button">💨 Blur</button>  
+    </div>  
+  </div>    <!-- MUSIC -->    <div class="flex items-center gap-3 mb-6">  
+    <p class="text-white dark:text-gray-200 font-semibold">🎵 Musik</p>  
+    <button id="musicToggle" class="bg-indigo-600 text-white px-3 py-1 rounded neon-button">▶️</button>  
+  </div>  
+  <audio id="bgMusic" src="lagu.mp3" loop></audio>    <!-- PROFILE -->    <div class="bg-indigo-50 dark:bg-gray-800 p-4 rounded-xl mb-6 flex justify-between text-sm dark:text-white">  
+    <span>👤 <strong id="currentUser"></strong></span>  
+    <span>📸 Total: <strong id="totalPhoto">0</strong></span>  
+    <span>❤️ Favorit: <strong id="totalFav">0</strong></span>  
+  </div>    <!-- UPLOAD -->    <div class="bg-indigo-100 dark:bg-gray-800 p-4 rounded-xl mb-6 grid md:grid-cols-5 gap-3">  
+    <input type="file" id="imageInput" accept="image/*">  
+    <input type="text" id="captionInput" placeholder="Judul" class="p-2 border rounded">  
+    <input type="date" id="dateInput" class="p-2 border rounded">  
+    <select id="albumInput" class="p-2 border rounded">  
+      <option>Peribadi</option>  
+      <option>Keluarga</option>  
+      <option>Teman</option>  
+      <option>Pacar</option>  
+    </select>  
+    <button onclick="addPhoto()" class="bg-indigo-600 text-white rounded neon-button">Upload</button>  
+  </div>    <!-- FILTER & KUNCI ALBUM -->    <div class="flex flex-col md:flex-row gap-3 mb-6">  
+    <input type="text" id="searchInput" placeholder="Cari..." onkeyup="loadGallery()" class="flex-1 p-3 border rounded">  
+    <select id="filterAlbum" onchange="checkLock()" class="p-3 border rounded">  
+      <option value="all">Semua Album</option>  
+      <option>Peribadi</option>  
+      <option>Keluarga</option>  
+      <option>Teman</option>  
+      <option>Pacar</option>  
+    </select>  
+    <select id="filterView" onchange="loadGallery()" class="p-3 border rounded">  
+      <option value="grid">🖼️ Galeri</option>  
+      <option value="timeline">📅 Timeline</option>  
+      <option value="fav">❤️ Favorit</option>  
+    </select>  
+    <button onclick="setAlbumPin(filterAlbum.value)" class="bg-yellow-500 text-white px-3 py-2 rounded neon-button">🔒 Kunci Album</button>  
+  </div>    <!-- GALLERY -->    <div id="gallery" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5"></div>    <!-- MODAL FOTO -->    <div id="photoModal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center hidden z-50">  
+    <div class="relative bg-white dark:bg-gray-900 rounded-2xl overflow-hidden max-w-3xl w-full transform scale-75 opacity-0 transition-all duration-500 modal-glow">  
+      <button onclick="closeModal()" class="absolute top-3 right-3 text-white bg-red-500 rounded-full w-8 h-8 flex items-center justify-center hover:bg-red-600 transition">✖</button>  
+      <button onclick="prevPhoto()" class="absolute left-3 top-1/2 -translate-y-1/2 text-white bg-gray-700 rounded-full w-10 h-10 flex items-center justify-center hover:bg-gray-600 transition">⬅️</button>  
+      <button onclick="nextPhoto()" class="absolute right-3 top-1/2 -translate-y-1/2 text-white bg-gray-700 rounded-full w-10 h-10 flex items-center justify-center hover:bg-gray-600 transition">➡️</button>  
+      <img id="modalImg" src="" class="w-full max-h-[80vh] object-contain bg-black transition-transform duration-500 hover:scale-105">  
+      <div class="p-4">  
+        <h3 id="modalTitle" class="font-bold dark:text-white text-xl mb-2 neon-text"></h3>  
+        <p id="modalAlbum" class="text-sm text-gray-600 dark:text-gray-300 mb-1"></p>  
+        <p id="modalDate" class="text-sm text-gray-600 dark:text-gray-300 mb-2"></p>  
+        <button id="modalFavBtn" onclick="toggleFavModal()" class="text-pink-500 text-2xl">🤍</button>  
+      </div>  
+    </div>  
+  </div>  </div>  <script>  
+// ===== STORAGE =====  
+let users = JSON.parse(localStorage.getItem("users")) || {};  
+let memories = JSON.parse(localStorage.getItem("memories")) || {};  
+let albumPins = JSON.parse(localStorage.getItem("albumPins")) || {};  
+let unlocked = {};  
+let currentUser = null;  
+let blurGallery = false;  
+  
+// ===== DARK MODE =====  
+function toggleDark(){   
+  document.documentElement.classList.toggle("dark");   
+  localStorage.setItem("dark", document.documentElement.classList.contains("dark"));   
+}  
+if(localStorage.getItem("dark")==="true") document.documentElement.classList.add("dark");  
+  
+// ===== REGISTER & LOGIN =====  
+function register(){   
+  const username=authUser.value.trim();   
+  const password=authPass.value.trim();   
+  if(!username||!password) return authMsg.textContent="Isi semua field!";   
+  if(users[username]) return authMsg.textContent="User sudah ada";   
+  users[username]=password; memories[username]=[]; albumPins[username]={};   
+  saveAll(); authMsg.textContent="Register sukses! Silahkan login.";   
+}  
+function login(){   
+  const username=authUser.value.trim();   
+  const password=authPass.value.trim();   
+  if(users[username]===password){ currentUser=username; unlocked={}; localStorage.setItem("lastUser", username); showDash(); }   
+  else authMsg.textContent="Login gagal! Username atau password salah.";   
+}  
+function logout(){ currentUser=null; dashboard.classList.add("hidden"); authPage.classList.remove("hidden"); localStorage.removeItem("lastUser"); pauseMusic(); }  
+  
+// ===== MUSIC =====  
+const bgMusic=document.getElementById("bgMusic"); const musicToggle=document.getElementById("musicToggle");  
+function playMusic(){ bgMusic.play().catch(()=>{}); musicToggle.textContent="⏸️"; }   
+function pauseMusic(){ bgMusic.pause(); musicToggle.textContent="▶️"; }   
+musicToggle.addEventListener("click",()=>{ if(bgMusic.paused) playMusic(); else pauseMusic(); });  
+bgMusic.addEventListener("ended", ()=> bgMusic.play());  
+  
+// ===== DASHBOARD =====  
+function showDash(){ authPage.classList.add("hidden"); dashboard.classList.remove("hidden"); document.getElementById("currentUser").textContent=currentUser; loadGallery(); playMusic(); }  
+function saveAll(){ localStorage.setItem("users",JSON.stringify(users)); localStorage.setItem("memories",JSON.stringify(memories)); localStorage.setItem("albumPins",JSON.stringify(albumPins)); }  
+  
+// ===== ADD PHOTO =====  
+function addPhoto(){ const file=imageInput.files[0]; if(!file||!captionInput.value) return; const reader=new FileReader(); reader.onload=e=>{ memories[currentUser].push({img:e.target.result,text:captionInput.value,album:albumInput.value,date:dateInput.value||new Date().toISOString().split('T')[0],fav:false}); saveAll(); loadGallery(); }; reader.readAsDataURL(file); captionInput.value=""; dateInput.value=""; }  
+  
+// ===== LOAD GALLERY =====  
+function loadGallery(){  
+  const key=searchInput.value.toLowerCase(); const album=filterAlbum.value; const view=filterView.value;  
+  gallery.innerHTML=""; let data=memories[currentUser]||[];  
+  data=data.filter(m=>m.text.toLowerCase().includes(key)); if(album!=="all") data=data.filter(m=>m.album===album); if(view==="fav") data=data.filter(m=>m.fav); if(view==="timeline") data.sort((a,b)=>new Date(a.date)-new Date(b.date));  
+  data.forEach((m,i)=>{ const card=document.createElement("div"); card.className="relative bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden hover-glow transform transition duration-500 animate-fadeInUp"; if(blurGallery) card.classList.add("blur");  
+    card.innerHTML=`<img src="${m.img}" onclick="openModal(${i})" class="w-full h-48 object-cover cursor-pointer"><div class="p-3"><h3 class="font-bold dark:text-white">${m.text}</h3><p class="text-sm">${m.album} • ${m.date}</p><div class="flex justify-between mt-2"><button onclick="toggleFav(${i})" class="text-pink-500">${m.fav?'❤️':'🤍'}</button><button onclick="del(${i})" class="text-red-500">🗑️</button></div></div>`;   
+    if(albumPins[currentUser]?.[m.album] && !unlocked[m.album]){ const overlay=document.createElement("div"); overlay.className="locked-overlay"; overlay.textContent="🔒 Album Terkunci"; card.appendChild(overlay); }  
+    gallery.appendChild(card);   
+  });  
+  totalPhoto.textContent=data.length; totalFav.textContent=data.filter(m=>m.fav).length;  
+}  
+  
+// ===== FAVORITE & DELETE =====  
+function toggleFav(i){ memories[currentUser][i].fav=!memories[currentUser][i].fav; saveAll(); loadGallery(); }  
+function del(i){ if(confirm("Hapus foto?")){ memories[currentUser].splice(i,1); saveAll(); loadGallery(); } }  
+  
+// ===== MODAL =====  
+let currentModalIndex=null;  
+function openModal(i){  
+  const m=memories[currentUser][i];  
+  if(albumPins[currentUser]?.[m.album] && !unlocked[m.album]){  
+    let pin=prompt(`Album "${m.album}" dikunci. Masukkan PIN:`);   
+    if(pin!==albumPins[currentUser][m.album]){ alert("PIN salah!"); return; }   
+    unlocked[m.album]=true;  
+  }  
+  currentModalIndex=i; showModal();  
+}  
+function showModal(){ const m=memories[currentUser][currentModalIndex]; modalImg.src=m.img; modalTitle.textContent=m.text; modalAlbum.textContent="Album: "+m.album; modalDate.textContent="Tanggal: "+m.date; modalFavBtn.textContent=m.fav?"❤️":"🤍"; photoModal.classList.remove("hidden"); setTimeout(()=>{photoModal.children[0].classList.remove("opacity-0","scale-75"); photoModal.children[0].classList.add("opacity-100","scale-100");},50);}  
+function closeModal(){ photoModal.children[0].classList.remove("opacity-100","scale-100"); photoModal.children[0].classList.add("opacity-0","scale-75"); setTimeout(()=>photoModal.classList.add("hidden"),500);}  
+function toggleFavModal(){ if(currentModalIndex===null) return; memories[currentUser][currentModalIndex].fav=!memories[currentUser][currentModalIndex].fav; modalFavBtn.textContent=memories[currentUser][currentModalIndex].fav?"❤️":"🤍"; saveAll(); loadGallery();}  
+function nextPhoto(){ currentModalIndex=(currentModalIndex+1)%memories[currentUser].length; showModal(); }  
+function prevPhoto(){ currentModalIndex=(currentModalIndex+memories[currentUser].length-1)%memories[currentUser].length; showModal(); }  
+  
+// ===== ALBUM PIN =====  
+function setAlbumPin(albumName){ if(!currentUser || albumName==="all") return alert("Pilih album valid!"); let pin = prompt(`Masukkan PIN baru untuk album "${albumName}":`); if(!pin) return; albumPins[currentUser][albumName] = pin; saveAll(); alert(`Album "${albumName}" berhasil dikunci!`);}  
+function checkLock(){ const album=filterAlbum.value; if(album==="all") return loadGallery(); const pin=albumPins[currentUser]?.[album]; if(pin && !unlocked[album]){ let inputPin=prompt(`Album "${album}" dikunci! Masukkan PIN:`); if(inputPin!==pin){ alert("PIN salah!"); filterAlbum.value="all"; } else unlocked[album]=true;} loadGallery();}  
+  
+// ===== BLUR =====  
+function toggleBlur(){ blurGallery=!blurGallery; loadGallery(); }  
+  
+// ===== AUTO LOGIN =====  
+if(localStorage.getItem("lastUser") && users[localStorage.getItem("lastUser")]){ currentUser=localStorage.getItem("lastUser"); showDash(); }  
+  
+</script>  </body>  
+</html>
